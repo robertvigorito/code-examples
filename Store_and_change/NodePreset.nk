@@ -1,0 +1,25 @@
+set cut_paste_input [stack 0]
+version 11.3 v4
+push $cut_paste_input
+NoOp {
+ name StoreAndChange
+ onCreate "import os\nimport json\nimport nuke\n\nINPUT_MESSAGE = 'Please insert the name of the preference?'\nERROR_MESSAGE = 'Please select TOTS_LIGHTING node to save preference!'\nERROR_DIR_MESSAGE = 'Invalid preference directory, please add to a valid directory'\n\nPREF_DIR = nuke.thisNode()\['pref_dir'].getValue()\nassert os.path.exists(PREF_DIR), ERROR_DIR_MESSAGE\n\nPREF_BASENAME = 'cc_data'\nEXTENSION = '.json'\nCC_DATA_FILE = os.path.join(PREF_DIR, PREF_BASENAME + EXTENSION)\n\n\ndef json_write(json_file_path, data):\n    with open(json_file_path, 'w') as open_json_file:\n        json.dump(data, open_json_file, indent=4)\n    return True\n\n\ndef json_read(json_file_path):\n    try:\n        with open(json_file_path, 'r') as open_json_file:\n            data = json.load(open_json_file)\n        return data\n\n    except (ValueError, IOError):\n        return dict()\n\n\ndef update_pulldown():\n    \"\"\"\n    Updating the node pulldown from the key values of the preference sheet...\n    \"\"\"\n\n    data = json_read(CC_DATA_FILE)\n    nuke.thisNode()\['TimeOfDay'].setValues(sorted(data.keys()))\n\n    return 1\n\n\ndef extract_node_info():\n    \"\"\"\n    Extract user knob data from node...\n    \"\"\"\n\n    node = nuke.selectedNode()\n    if 'TOTS_LIGHTING' not in node.name():\n        raise ValueError(ERROR_MESSAGE)\n\n    for knob in node.writeKnobs().split('\\n'):\n        if not knob:\n            continue\n\n        knob = knob.split(' ')\[0]\n        value = node\[knob].getValue()\n\n        yield knob, value\n\n\ndef add_to_pref():\n    \"\"\"\n    Save to json preference sheet...\n    \"\"\"\n\n    pref_key = nuke.getInput(INPUT_MESSAGE)\n\n    if not pref_key:\n        return 0\n\n    data = json_read(CC_DATA_FILE)\n\n    if not isinstance(data, dict):\n        data = dict()\n\n    node_data = \{pref_key: \{key: item for key, item in extract_node_info()\}\}\n    data.update(node_data)\n\n    json_write(CC_DATA_FILE, data)\n    update_pulldown()\n\n    return 1\n\n\ndef update_group_nodes():\n    \"\"\"\n    Updating the tots lighting group.\n    \"\"\"\n\n    key = nuke.thisNode()\['TimeOfDay'].value()\n    pref_data = json_read(CC_DATA_FILE).get(key, dict())\n\n    for node in nuke.allNodes('Group'):\n        if 'TOTS_LIGHTING' not in node.name():\n            continue\n\n        for name, value in pref_data.items():\n            if type(node.knob(name)) == nuke.Enumeration_Knob:\n                value = int(value)\n\n            elif type(node.knob(name)) == nuke.Tab_Knob:\n                continue\n\n            node\[name].setValue(value)\n            \n    return 1\n\n\ndef remove_from_pref():\n    \"\"\"\n    Delete selected data from json preference sheet...\n    \"\"\"\n    try:\n        key = nuke.thisNode()\['TimeOfDay'].value()\n        data = json_read(CC_DATA_FILE)\n        data.pop(key)\n\n        json_write(CC_DATA_FILE, data)\n        update_pulldown()\n\n    except KeyError:\n        pass\n\n\nupdate_pulldown()\n"
+ autolabel "nuke.thisNode().name() + '\\n' + nuke.thisNode()\['TimeOfDay'].value()"
+ tile_color 0xff0000ff
+ note_font "Bitstream Vera Sans Bold Bold Bold Bold Bold Bold Bold Bold Bold Bold Bold Bold Bold Bold Bold Bold Bold Bold"
+ selected true
+ xpos 490
+ ypos 282
+ hide_input true
+ addUserKnob {20 User}
+ addUserKnob {26 ""}
+ addUserKnob {4 TimeOfDay l "Time Of Day" M {}}
+ addUserKnob {22 Add -STARTLINE T add_to_pref()}
+ addUserKnob {22 Remove -STARTLINE T remove_from_pref()}
+ addUserKnob {22 Run T update_group_nodes() +STARTLINE}
+ addUserKnob {26 ""}
+ addUserKnob {20 Setting}
+ addUserKnob {2 pref_dir l Directory:}
+ pref_dir /path/to/server/directory
+ addUserKnob {22 reload l Reload -STARTLINE T "exec(nuke.thisNode()\['onCreate'].getValue())"}
+}
