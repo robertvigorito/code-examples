@@ -1,5 +1,5 @@
-# code_examples
-Example of some of the production tools I have developed for VFX
+# Code Descriptions
+> Production example of previous developed tools, descriptions below:
 
 ### Store n Change
 This was a quick tool I made for my previous lead that is currently working on a disney animated production. Which allowed artists to 
@@ -13,6 +13,7 @@ Clients were delivery edl files with shot data in the same file, this is a tool 
 Gives the artist the ability to quickly share nodes over the server, by defining a server location to save the artist copy and paste information, 
 artists are able to select from a list of who they would like to copy from. The tool has preset setup for the option of quick paste, 
 where we grab the last artist you copied from
+
 ### Mr Wolf Launcher
 Is a base tool that automatically appends all custom studio tools to a nice ui to help organize workflow and prevent having numerous shortcut icon
 on the desktop.
